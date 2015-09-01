@@ -91,7 +91,7 @@ String verifyResponse(String ikey, String skey, String akey, String sigResponse)
 
   String authSig = parts[0];
   String appSig = parts[1];
-  String authUser = _parseVals(skey, authSig, "TX", ikey);
+  String authUser = _parseVals(skey, authSig, "AUTH", ikey);
   String appUser = _parseVals(akey, appSig, "APP", ikey);
 
   if(authUser != appUser)
