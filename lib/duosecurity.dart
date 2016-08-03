@@ -2,19 +2,21 @@ library duosecurity;
 
 import "dart:convert";
 
-import "package:crypto/crypto.dart";
+import "package:crypto/crypto.dart" as crypto;
+import "package:convert/convert.dart" as convert;
 
-String _getHMac(String key, String val) {
-  HMAC mac = new HMAC(new SHA1(), UTF8.encode(key));
-  mac.add(UTF8.encode(val));
-  return CryptoUtils.bytesToHex(mac.close());
+String _getHMac(String key, String val) {  
+  crypto.Hmac mac = new crypto.Hmac(crypto.sha1, UTF8.encode((key)));
+  var bytes = mac.convert(UTF8.encode(val)).bytes;
+  
+  return convert.hex.encode(bytes);
 }
 
 String _signVals(String key, String vals, String prefix, int expire) {
   num exp = (new DateTime.now().millisecondsSinceEpoch / 1000).round() + expire;
 
   String val = "$vals|$exp";
-  String b64 = CryptoUtils.bytesToBase64(UTF8.encode(val));
+  String b64 = BASE64.encode(UTF8.encode(val));
   String cookie = "$prefix|$b64";
 
   return "$cookie|${_getHMac(key, cookie)}";
@@ -24,7 +26,7 @@ String _parseVals(String key, String val, String prefix, String ikey) {
   num ts = (new DateTime.now().millisecondsSinceEpoch / 1000).round();
 
   List<String> parts = val.split("|");
-  if(parts.length != 3) {
+  if (parts.length != 3) {
     return null;
   }
 
@@ -34,24 +36,24 @@ String _parseVals(String key, String val, String prefix, String ikey) {
 
   String sig = _getHMac(key, "$uPrefix|$uB64");
 
-  if(_getHMac(key, sig) != _getHMac(key, uSig))
+  if (_getHMac(key, sig) != _getHMac(key, uSig))
     return null;
 
-  if(uPrefix != prefix)
+  if (uPrefix != prefix)
     return null;
 
-  List<String> cookieParts = UTF8.decode(CryptoUtils.base64StringToBytes(uB64)).split("|");
-  if(cookieParts.length != 3)
+  List<String> cookieParts = UTF8.decode(BASE64.decode(uB64)).split("|");
+  if (cookieParts.length != 3)
     return null;
 
   String user = cookieParts[0];
   String uikey = cookieParts[1];
   String exp = cookieParts[2];
 
-  if(uikey != ikey)
+  if (uikey != ikey)
     return null;
 
-  if(ts >= int.parse(exp))
+  if (ts >= int.parse(exp))
     return null;
 
   return user;
@@ -86,7 +88,7 @@ String signRequest(String ikey, String skey, String akey, String username) {
  */
 String verifyResponse(String ikey, String skey, String akey, String sigResponse) {
   List<String> parts = sigResponse.split(":");
-  if(parts.length != 2)
+  if (parts.length != 2)
     return null;
 
   String authSig = parts[0];
@@ -94,7 +96,7 @@ String verifyResponse(String ikey, String skey, String akey, String sigResponse)
   String authUser = _parseVals(skey, authSig, "AUTH", ikey);
   String appUser = _parseVals(akey, appSig, "APP", ikey);
 
-  if(authUser != appUser)
+  if (authUser != appUser)
     return null;
 
   return authUser;
