@@ -1,6 +1,6 @@
 name: duosecurity
-version: 0.0.1
-author: Michael Bullington <m.bullington@dglogik.com>
+version: 1.0.0
+author: Michael Bullington <Michael.Bullington@AcuityBrands.com>
 environment:
   sdk: '>=1.0.0 <2.0.0'
 dependencies:
